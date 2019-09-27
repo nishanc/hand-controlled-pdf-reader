@@ -33,13 +33,9 @@ let video = document.getElementById('video');
 let canvas = document.getElementById('hcanvas');
 let context = canvas.getContext('2d');
 
-// let pdfCanvas = document.getElementById("pdf");
-// let pdfContext = pdfCanvas.getContext("2d");
-
 let model;
 let videoWidth;
 let videoMidpoint;
-// let startPoint = videoMidpoint;
 let isVideo = false;
 
 var currPage = 1; //Pages are 1-based not 0-based
@@ -57,34 +53,20 @@ const modelParams = {
   scoreThreshold: 0.9,    // confidence threshold for predictions.
 }
 
+//-----------------------------------------------------//
+//-------------------PDF.js----------------------------//
+//-----------------------------------------------------//
+
 loadingTask.promise.then(
   function(pdf) {
-          //Set PDFJS global object (so we can easily access in our page functions
-          thePDF = pdf;
+    //Set PDFJS global object (so we can easily access in our page functions
+    thePDF = pdf;
 
-          //How many pages it has
-          numPages = pdf.numPages;
-    
-          //Start with first page
-          pdf.getPage( 1 ).then( handlePages );
-    // // Load information from the first page.
-    // pdf.getPage(1).then(function(page) {
-    //   let scale = 1;
+    //How many pages it has
+    numPages = pdf.numPages;
 
-    //   let viewport = page.getViewport(scale);
-    //   pdfCanvas.height = viewport.height;
-    //   pdfCanvas.width = viewport.width;
-
-    //   // Render the page into the <canvas> element.
-    //   var renderContext = {
-    //     canvasContext: pdfContext,
-    //     viewport: viewport
-    //   };
-    //   page.render(renderContext).then(function() {
-    //     console.log("Page rendered!");
-    //   });
-    // });
-    
+    //Start with first page
+    pdf.getPage( 1 ).then( handlePages );
   },
   function(reason) {
     console.error(reason);
@@ -123,37 +105,32 @@ function handlePages(page)
     }
 }
 
+//-----------------------------------------------------//
+//-------------------Handtrack-------------------------//
+//-----------------------------------------------------//
+
 function startVideo() {
   handTrack.startVideo(video).then(status => {
-    // console.log("Model rendered!");  
       if(status){
-          // navigator.getUserMedia({video:{}}, stream => {
-          //     video.srcObject = stream;
-          //     isVideo = true
-          //     runDetection();
-          // },
-          // err => console.log(err)
-          // );
           videoWidth = document.getElementById("video").width;
           videoMidpoint = videoWidth / 2;
-          isVideo = true
-          runDetection()
+          isVideo = true;
+          runDetection();
       }
   });
 }
 
 function toggleVideo() {
   if (!isVideo) {
-
-      console.log("Starting")
+      console.log("Starting");
       startVideo();
-      togglePipButton.style.display = 'block'
+      togglePipButton.style.display = 'block';
   } else {
-      console.log("Stopping")
-      handTrack.stopVideo(video)
+      console.log("Stopping");
+      handTrack.stopVideo(video);
       isVideo = false;
-      console.log("Stopped")
-      togglePipButton.style.display = 'none'
+      console.log("Stopped");
+      togglePipButton.style.display = 'none';
   }
 }
 
@@ -161,19 +138,17 @@ trackButton.addEventListener("click", function () {
   toggleVideo();
 });
 
-
 function runDetection(){
     model.detect(video).then(predictions => {
         model.renderPredictions(predictions, canvas, context, video);
         if (predictions[0]) {
             console.log(predictions);
-            let midval = predictions[0].bbox[0] + (predictions[0].bbox[2] / 2)
             let x =  predictions[0].bbox[0];
 
             console.log('x',x)
             console.log('video width', videoWidth);
             console.log('video mid', videoMidpoint);
-            updatePageControl(x)
+            updatePageControl(x);
         }
         requestAnimationFrame(runDetection);
     });
@@ -186,7 +161,7 @@ function updatePageControl(x) {
           top: 100, // scroll down by 100 px
           left: 0, 
           behavior: 'smooth' 
-        })
+        });
     }
     if(x<videoMidpoint){
         console.log('left')
@@ -194,9 +169,8 @@ function updatePageControl(x) {
           top: -100, // scroll up by 100 px
           left: 0, 
           behavior: 'smooth' 
-        })
+        });
     }
-    startPoint = x;
 }
 
 handTrack.load(modelParams).then(lmodel => {
@@ -204,6 +178,10 @@ handTrack.load(modelParams).then(lmodel => {
     modelLoader.style.display="none";
     trackButton.disabled = false;
 });
+
+//-----------------------------------------------------//
+//----------Picture-in-Picture-------------------------//
+//-----------------------------------------------------//
 
 togglePipButton.addEventListener('click', async function(event) {
   togglePipButton.disabled = true;
